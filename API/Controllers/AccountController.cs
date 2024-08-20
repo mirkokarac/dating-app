@@ -13,11 +13,13 @@ namespace API.Controllers
         [HttpPost("register")] // account/register
         public async Task<ActionResult<AppUser>> Register(RegisterDto registerDto)
         {
+            if (await UserExists(registerDto.Username)) return BadRequest("Username is taken");
+
             using var hmac = new HMACSHA512();
 
             var user = new AppUser
             {
-                UserName = registerDto.Username,
+                UserName = registerDto.Username.ToLower(),
                 PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password)),
                 PasswordSalt = hmac.Key
             };
