@@ -8,7 +8,9 @@ public class AutoMapperProfiles : Profile
 {
     public AutoMapperProfiles()
     {
-        CreateMap<AppUser, MemberDto>();
+        CreateMap<AppUser, MemberDto>()
+            .ForMember(d => d.PhotoUrl, o =>
+                o.MapFrom(s => s.Photos.FirstOrDefault(x => x.isMain)!.Url));
         CreateMap<Photo, PhotoDto>();
     }
 }
