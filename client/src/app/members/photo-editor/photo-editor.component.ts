@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, input } from '@angular/core';
+import { Member } from '../../_models/member';
 
 @Component({
   selector: 'app-photo-editor',
@@ -8,5 +9,6 @@ import { Component } from '@angular/core';
   styleUrl: './photo-editor.component.css'
 })
 export class PhotoEditorComponent {
+  member = input.required<Member>();
 
 }
