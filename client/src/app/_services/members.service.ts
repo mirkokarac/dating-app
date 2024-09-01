@@ -14,7 +14,7 @@ export class MembersService {
   private http = inject(HttpClient);
   baseUrl = environment.apiUrl;
   // members = signal<Member[]>([]);
-  paginatedResult = signal<PaginatedResult<Member[]> | null>(null)
+  paginatedResult = signal<PaginatedResult<Member[]> | null>(null);
 
   getMembers(userParams: UserParams) {
     let params = this.setPaginationHeaders(userParams.pageNumber, userParams.pageSize);
@@ -22,6 +22,7 @@ export class MembersService {
     params = params.append('minAge', userParams.minAge);
     params = params.append('maxAge', userParams.maxAge);
     params = params.append('gender', userParams.gender);
+    params = params.append('orderBy', userParams.orderBy);
 
     return this.http.get<Member[]>(this.baseUrl + 'users', { observe: 'response', params }).subscribe({
       next: response => {
