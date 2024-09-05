@@ -3,12 +3,14 @@ import { inject, Injectable, signal } from '@angular/core';
 import { User } from '../_models/user';
 import { map } from 'rxjs/internal/operators/map';
 import { environment } from '../../environments/environment';
+import { LikesService } from './likes.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AccountService {
   private http = inject(HttpClient);
+  private likeService = inject(LikesService);
   baseURL = environment.apiUrl;;
   currentUser = signal<User | null>(null);
 
@@ -33,6 +35,7 @@ export class AccountService {
     if (user) {
       localStorage.setItem('user', JSON.stringify(user));
       this.currentUser.set(user);
+      this.likeService.getLikeIds();
     }
   }
 
