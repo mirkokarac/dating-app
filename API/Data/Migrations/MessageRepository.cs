@@ -1,9 +1,11 @@
+using API.Controllers;
 using API.DTOs;
 using API.Entities;
 using API.Helpers;
 using API.Interfaces;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Data.Migrations;
 
@@ -44,9 +46,28 @@ public class MessageRepository(DataContext context, IMapper mapper) : IMessageRe
             messageParams.PageSize);
     }
 
-    public Task<IEnumerable<MessageDto>> GetMessageThread(string currentUsername, string recipientUsername)
+    public async Task<IEnumerable<MessageDto>> GetMessageThread(string currentUsername, string recipientUsername)
     {
-        throw new NotImplementedException();
+        var messages = await context.Messages
+        .Include(x => x.Sender).ThenInclude(x => x.Photos)
+        .Include(x => x.Recipient).ThenInclude(x => x.Photos)
+        .Where(x =>
+            x.RecipientUsername == currentUsername && x.SendUsername == recipientUsername ||
+            x.SendUsername == currentUsername && x.RecipientUsername == recipientUsername
+        )
+        .OrderBy(x => x.MessageSent)
+        .ToListAsync();
+
+        var unreadMessages = messages.Where(x => x.DateRead == null &&
+            x.RecipientUsername == currentUsername).ToList();
+
+        if (unreadMessages.Count != 0)
+        {
+            unreadMessages.ForEach(x => x.DateRead = DateTime.Now);
+            await context.SaveChangesAsync();
+        }
+
+        return mapper.Map<IEnumerable<MessageDto>>(messages);
     }
 
     public async Task<bool> SaveAllAsync()
