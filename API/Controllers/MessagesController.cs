@@ -1,6 +1,7 @@
 using API.DTOs;
 using API.Entities;
 using API.Extensions;
+using API.Helpers;
 using API.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
@@ -39,5 +40,17 @@ public class MessagesController(IMessageRepository messageRepo,
         if (await messageRepo.SaveAllAsync()) return Ok(mapper.Map<MessageDto>(message));
 
         return BadRequest("Failed to save message");
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<MessageDto>>> GetMessages(
+        [FromQuery] MessageParams messageParams)
+    {
+        messageParams.Username = User.GetUserName();
+
+        var messages = await messageRepo.GetMessagesForUser(messageParams);
+        Response.AddPaginationHeader(messages);
+
+        return messages;
     }
 }
