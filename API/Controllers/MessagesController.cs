@@ -30,7 +30,7 @@ public class MessagesController(IMessageRepository messageRepo,
         {
             Sender = sender,
             Recipient = recipient,
-            SendUsername = sender.UserName,
+            SenderUsername = sender.UserName,
             RecipientUsername = recipient.UserName,
             Content = createMessageDto.Content
         };
