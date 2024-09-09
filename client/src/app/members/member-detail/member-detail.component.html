@@ -1,4 +1,3 @@
-@if(member){
 <div class="row">
   <div class="col-4">
     <div class="card">
@@ -24,7 +23,7 @@
       <div class="card-footer">
         <div class="btn-group d-flex">
           <button class="btn btn-primary">Like</button>
-          <button class="btn btn-success">Message</button>
+          <button (click)="selectTab('Messages')" class="btn btn-success">Message</button>
         </div>
       </div>
     </div>
@@ -57,4 +56,3 @@
     </tabset>
   </div>
 </div>
-}
