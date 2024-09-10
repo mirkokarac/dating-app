@@ -43,7 +43,7 @@ namespace API.Controllers
                 .FirstOrDefaultAsync(x =>
                 x.UserName == loginDto.Username.ToLower());
 
-            if (user == null) return Unauthorized("Invalid username");
+            if (user == null || user.UserName == null) return Unauthorized("Invalid username");
 
             return new UserDto
             {
@@ -57,7 +57,7 @@ namespace API.Controllers
 
         private async Task<bool> UserExists(string username)
         {
-            return await context.Users.AnyAsync(x => x.UserName.ToLower() == username.ToLower());
+            return await context.Users.AnyAsync(x => x.NormalizedUserName == username.ToUpper());
         }
     }
 }
