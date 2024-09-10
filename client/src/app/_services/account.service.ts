@@ -11,7 +11,7 @@ import { LikesService } from './likes.service';
 export class AccountService {
   private http = inject(HttpClient);
   private likeService = inject(LikesService);
-  baseURL = environment.apiUrl;;
+  baseURL = environment.apiUrl;
   currentUser = signal<User | null>(null);
   roles = computed(() => {
     const user = this.currentUser();
