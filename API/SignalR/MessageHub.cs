@@ -1,11 +1,15 @@
 using System.Text.RegularExpressions;
+using API.DTOs;
+using API.Entities;
 using API.Extensions;
 using API.Interfaces;
+using AutoMapper;
 using Microsoft.AspNetCore.SignalR;
 
 namespace API.SignalR;
 
-public class MessageHub(IMessageRepository messageRepo) : Hub
+public class MessageHub(IMessageRepository messageRepo,
+    IUserRepository userRepo, IMapper mapper) : Hub
 {
     public override async Task OnConnectedAsync()
     {
@@ -16,7 +20,7 @@ public class MessageHub(IMessageRepository messageRepo) : Hub
             throw new Exception("Cannot join group");
 
         var userName = Context.User.GetUserName();
-        var groupName = GetRoupName(userName, otherUser);
+        var groupName = GetGroupName(userName, otherUser);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
 
@@ -30,7 +34,44 @@ public class MessageHub(IMessageRepository messageRepo) : Hub
         return base.OnDisconnectedAsync(exception);
     }
 
-    private string GetRoupName(string caller, string? other)
+    public async Task SendMessage(CreateMessageDto createMessageDto)
+    {
+        var username = Context.User?.GetUserName() ??
+            throw new Exception("Could not get user");
+
+        if (username == createMessageDto.RecipientUsername)
+        {
+            throw new HubException("You cannot message yourself");
+        }
+
+        var sender = await userRepo.GetUserByUsernameAsync(username);
+        var recipient = await userRepo.GetUserByUsernameAsync(createMessageDto.RecipientUsername);
+
+        if (recipient == null || sender == null || sender.UserName == null ||
+            recipient.UserName == null)
+            throw new HubException("Cannot send message at this time");
+
+        var message = new Message
+        {
+            Sender = sender,
+            Recipient = recipient,
+            SenderUsername = sender.UserName,
+            RecipientUsername = recipient.UserName,
+            Content = createMessageDto.Content
+        };
+
+        messageRepo.AddMessage(message);
+
+        if (await messageRepo.SaveAllAsync())
+        {
+            var group = GetGroupName(sender.UserName, recipient.UserName);
+            await Clients.Group(group).SendAsync("NewMessage",
+                mapper.Map<MessageDto>(message));
+        }
+
+    }
+
+    private string GetGroupName(string caller, string? other)
     {
         var stringCompare = string.CompareOrdinal(other, caller) < 0;
         return stringCompare ? $"{caller}-{other}" : $"{other}-{caller}";
