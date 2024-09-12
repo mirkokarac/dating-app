@@ -40,7 +40,7 @@ public class MessageHub(IMessageRepository messageRepo,
         var username = Context.User?.GetUserName() ??
             throw new Exception("Could not get user");
 
-        if (username == createMessageDto.RecipientUsername)
+        if (username == createMessageDto.RecipientUsername.ToLower())
         {
             throw new HubException("You cannot message yourself");
         }
