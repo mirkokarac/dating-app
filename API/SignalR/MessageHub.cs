@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace API.SignalR;
 
-public class MessageHub(IMessageRepository messageRepo,
-    IUserRepository userRepo, IMapper mapper) : Hub
+public class MessageHub(IMessageRepository messageRepo, IUserRepository userRepo,
+    IMapper mapper, IHubContext<PresenceHub> presenceHub) : Hub
 {
     public override async Task OnConnectedAsync()
     {
@@ -18,15 +18,14 @@ public class MessageHub(IMessageRepository messageRepo,
         if (Context.User == null || string.IsNullOrEmpty(otherUser))
             throw new Exception("Cannot join group");
 
-        var userName = Context.User.GetUserName();
-        var groupName = GetGroupName(userName, otherUser);
+        var groupName = GetGroupName(Context.User.GetUserName(), otherUser);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
         await AddToGroup(groupName);
 
-        var messages = await messageRepo.GetMessageThread(userName, otherUser!);
+        var messages = await messageRepo.GetMessageThread(Context.User.GetUserName(), otherUser!);
 
-        await Clients.Group(groupName).SendAsync("ReceivedMessageThread", messages);
+        await Clients.Group(groupName).SendAsync("ReceiveMessageThread", messages);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -67,6 +66,19 @@ public class MessageHub(IMessageRepository messageRepo,
         if (group != null && group.Connections.Any(x => x.Username == recipient.UserName))
         {
             message.DateRead = DateTime.UtcNow;
+        }
+        else
+        {
+            var connections = await PresenceTracker.GetConnectionsForUser(recipient.UserName);
+            if (connections != null && connections?.Count != null)
+            {
+                await presenceHub.Clients.Clients(connections)
+                    .SendAsync("NewMessageReceived", new
+                    {
+                        username = sender.UserName,
+                        knownAs = sender.KnownAs
+                    });
+            }
         }
 
         messageRepo.AddMessage(message);
