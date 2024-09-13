@@ -1,4 +1,3 @@
-using API.Controllers;
 using API.DTOs;
 using API.Entities;
 using API.Helpers;
@@ -102,10 +101,5 @@ public class MessageRepository(DataContext context, IMapper mapper) : IMessageRe
     public void RemoveConnection(Connection connection)
     {
         context.Connections.Remove(connection);
-    }
-
-    public async Task<bool> SaveAllAsync()
-    {
-        return await context.SaveChangesAsync() > 0;
     }
 }
