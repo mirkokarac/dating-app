@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using API.DTOs;
 using API.Entities;
 using API.Extensions;
@@ -11,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controllers
 {
     [Authorize]
-    public class UsersController(IUserRepository userRepository,
+    public class UsersController(IUnitOfWork unitOfWork,
         IMapper mapper, IPhotoService photoService) : BaseApiController
     {
         [HttpGet]
@@ -19,7 +18,7 @@ namespace API.Controllers
             UserParams userParams)
         {
             userParams.CurrentUserName = User.GetUserName();
-            var users = await userRepository.GetMembersAsync(userParams);
+            var users = await unitOfWork.UserRepository.GetMembersAsync(userParams);
 
             Response.AddPaginationHeader(users);
             return Ok(users);
@@ -28,7 +27,7 @@ namespace API.Controllers
         [HttpGet("{username}")] // /api/users/1
         public async Task<ActionResult<MemberDto>> GetUser(string username)
         {
-            var user = await userRepository.GetMemberAsync(username);
+            var user = await unitOfWork.UserRepository.GetMemberAsync(username);
 
             if (user == null) return NotFound();
 
@@ -38,13 +37,13 @@ namespace API.Controllers
         [HttpPut]
         public async Task<ActionResult> UpdateUser(MemberUpdateDto memberUpdateDto)
         {
-            var user = await userRepository.GetUserByUsernameAsync(User.GetUserName());
+            var user = await unitOfWork.UserRepository.GetUserByUsernameAsync(User.GetUserName());
 
             if (user == null) return BadRequest("Could not find user");
 
             mapper.Map(memberUpdateDto, user);
 
-            if (await userRepository.SaveAllAsync()) return NoContent();
+            if (await unitOfWork.Complete()) return NoContent();
 
             return BadRequest("Failed to update the user");
         }
@@ -52,7 +51,7 @@ namespace API.Controllers
         [HttpPost("add-photo")]
         public async Task<ActionResult<PhotoDto>> AddPhoto(IFormFile file)
         {
-            var user = await userRepository.GetUserByUsernameAsync(User.GetUserName());
+            var user = await unitOfWork.UserRepository.GetUserByUsernameAsync(User.GetUserName());
 
             if (user == null) return BadRequest("Could not find user");
 
@@ -70,7 +69,7 @@ namespace API.Controllers
 
             user.Photos.Add(photo);
 
-            if (await userRepository.SaveAllAsync())
+            if (await unitOfWork.Complete())
                 return CreatedAtAction(nameof(GetUser),
                     new { username = user.UserName }, mapper.Map<PhotoDto>(photo));
 
@@ -80,7 +79,7 @@ namespace API.Controllers
         [HttpPut("set-main-photo/{photoId:int}")]
         public async Task<ActionResult> SetMainPhoto(int photoId)
         {
-            var user = await userRepository.GetUserByUsernameAsync(User.GetUserName());
+            var user = await unitOfWork.UserRepository.GetUserByUsernameAsync(User.GetUserName());
 
             if (user == null) return BadRequest("Could not find user");
 
@@ -95,7 +94,7 @@ namespace API.Controllers
 
             photo.isMain = true;
 
-            if (await userRepository.SaveAllAsync()) return NoContent();
+            if (await unitOfWork.Complete()) return NoContent();
 
             return BadRequest("Problem setting main photo");
         }
@@ -103,7 +102,7 @@ namespace API.Controllers
         [HttpDelete("delete-photo/{photoId:int}")]
         public async Task<ActionResult> DeletePhoto(int photoId)
         {
-            var user = await userRepository.GetUserByUsernameAsync(User.GetUserName());
+            var user = await unitOfWork.UserRepository.GetUserByUsernameAsync(User.GetUserName());
 
             if (user == null) return BadRequest("Could not find user");
 
@@ -119,7 +118,7 @@ namespace API.Controllers
 
             user.Photos.Remove(photo);
 
-            if (await userRepository.SaveAllAsync()) return Ok();
+            if (await unitOfWork.Complete()) return Ok();
 
             return BadRequest("Problem deleting the photo");
         }
