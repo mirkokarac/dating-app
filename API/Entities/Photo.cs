@@ -9,6 +9,7 @@ public class Photo
     public required string Url { get; set; }
     public bool isMain { get; set; }
     public string? PublicId { get; set; }
+    public bool IsApproved { get; set; } = false;
 
     // navigation properties
     public int AppUserId { get; set; }

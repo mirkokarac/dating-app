@@ -27,11 +27,10 @@ namespace API.Controllers
         [HttpGet("{username}")] // /api/users/1
         public async Task<ActionResult<MemberDto>> GetUser(string username)
         {
-            var user = await unitOfWork.UserRepository.GetMemberAsync(username);
+            var currentUsername = User.GetUserName();
 
-            if (user == null) return NotFound();
-
-            return user;
+            return await unitOfWork.UserRepository.GetMemberAsync(username,
+                isCurrentUser: currentUsername == username);
         }
 
         [HttpPut]
@@ -64,8 +63,6 @@ namespace API.Controllers
                 Url = result.SecureUrl.AbsoluteUri,
                 PublicId = result.PublicId,
             };
-
-            if (user.Photos.Count == 0) photo.isMain = true;
 
             user.Photos.Add(photo);
 
@@ -102,25 +99,19 @@ namespace API.Controllers
         [HttpDelete("delete-photo/{photoId:int}")]
         public async Task<ActionResult> DeletePhoto(int photoId)
         {
-            var user = await unitOfWork.UserRepository.GetUserByUsernameAsync(User.GetUserName());
-
-            if (user == null) return BadRequest("Could not find user");
-
-            var photo = user.Photos.FirstOrDefault(x => x.Id == photoId);
-
+            var user = await
+           unitOfWork.UserRepository.GetUserByUsernameAsync(User.GetUserName());
+            if (user == null) return BadRequest("User not found");
+            var photo = await unitOfWork.PhotoRepository.GetPhotoById(photoId);
             if (photo == null || photo.isMain) return BadRequest("This photo cannot be deleted");
-
             if (photo.PublicId != null)
             {
                 var result = await photoService.DeletePhotoAsync(photo.PublicId);
                 if (result.Error != null) return BadRequest(result.Error.Message);
             }
-
             user.Photos.Remove(photo);
-
             if (await unitOfWork.Complete()) return Ok();
-
-            return BadRequest("Problem deleting the photo");
+            return BadRequest("Problem deleting photo");
         }
     }
 }
