@@ -101,7 +101,7 @@ public class MessageHub(IUnitOfWork unitOfWork, IMapper mapper,
     {
         var username = Context.User?.GetUserName() ??
                     throw new Exception("Could not get username");
-        var group = await unitOfWork.MessageRepository.GetMessageGroup(username);
+        var group = await unitOfWork.MessageRepository.GetMessageGroup(groupName);
         var connection = new Connection
         {
             ConnectionId = Context.ConnectionId,
