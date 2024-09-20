@@ -1,9 +1,13 @@
-@if(member){
 <div class="row">
   <div class="col-4">
     <div class="card">
       <img class="card-img img-thumbnail" src="{{member.photoUrl || '/assets/user.png'}}" alt="{{member.knownAs}}">
       <div class="card-body">
+        <div class="mb-2">
+          @if(presenceService.onlineUsers().includes(member.username)){
+          <i class="fa fa-user-circle text-success"> Online now</i>
+          }
+        </div>
         <div>
           <strong>Location:</strong>
           <p>{{member.city}}, {{member.country}}</p>
@@ -24,36 +28,36 @@
       <div class="card-footer">
         <div class="btn-group d-flex">
           <button class="btn btn-primary">Like</button>
-          <button class="btn btn-success">Message</button>
+          <button (click)="selectTab('Messages')" class="btn btn-success">Message</button>
         </div>
       </div>
     </div>
   </div>
 
   <div class="col-8">
-    <tabset class="member-tabset">
-      <tab heading="About {{member.knownAs}}">
+    <tabset class="member-tabset" #memberTabs>
+      <tab heading="About {{member.knownAs}}" (selectTab)="onTabActivated($event)">
         <h4>Description</h4>
         <p>{{member.introduction}}</p>
         <h4>Looking for</h4>
         <p>{{member.lookingFor}}</p>
       </tab>
 
-      <tab heading="Interests">
+      <tab heading="Interests" (selectTab)="onTabActivated($event)">
         <h4>Interests</h4>
         <p>{{member.interests}}</p>
       </tab>
 
-      <tab heading="Photos" #photoTab="tab">
+      <tab heading="Photos" #photoTab="tab" (selectTab)="onTabActivated($event)">
         @if (photoTab.active) {
         <gallery [items]="images" [itemAutosize]="true" class="gallery"></gallery>
         }
       </tab>
 
-      <tab heading="Messages">
-        <h4>Messages will go here</h4>
+      <tab heading="Messages" (selectTab)="onTabActivated($event)">
+        <app-member-messages [username]="member.username">
+        </app-member-messages>
       </tab>
     </tabset>
   </div>
 </div>
-}
